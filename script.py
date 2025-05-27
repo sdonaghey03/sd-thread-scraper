@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+import psycopg2
 import time
 import os
 
@@ -12,15 +13,33 @@ THREAD_URL = 'https://forum.eclipse-rp.net/topic/28550-los-santos-county-sheriff
 # File to store the ID of the latest seen post
 LATEST_POST_FILE = 'latest_post_id.txt'
 
+def get_db_connection():
+    return psycopg2.connect(
+        dbname=os.getenv("PGDATABASE"),
+        user=os.getenv("PGUSER"),
+        password=os.getenv("PGPASSWORD"),
+        host=os.getenv("PGHOST"),
+        port=os.getenv("PGPORT")
+    )
+
 def get_latest_post_id():
-    if os.path.exists(LATEST_POST_FILE):
-        with open(LATEST_POST_FILE, 'r') as file:
-            return file.read().strip()
-    return None
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS post_tracker (id SERIAL PRIMARY KEY, latest_post_id TEXT);")
+    cur.execute("SELECT latest_post_id FROM post_tracker ORDER BY id DESC LIMIT 1;")
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+    return result[0] if result else None
+
 
 def save_latest_post_id(post_id):
-    with open(LATEST_POST_FILE, 'w') as file:
-        file.write(post_id)
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("INSERT INTO post_tracker (latest_post_id) VALUES (%s);", (post_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
 
 def scrape_thread():
     post_data = []
@@ -92,7 +111,7 @@ def main():
     while True:
         latest_post_id = get_latest_post_id()
         print(f"Latest post ID: {latest_post_id}")
-        
+
         post_data = scrape_thread()
 
         new_replies = []
