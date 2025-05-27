@@ -114,6 +114,7 @@ def send_to_discord(username, timestamp, summary, img_url, post_url):
 
 def main():
     print("Starting the LS County Sheriff's Department thread scraper...")
+    print("All ENV Vars:", dict(os.environ))
     print("Environment variables:")
     print(f"PGDATABASE: {PGDATABASE}")
     print(f"PGUSER: {PGUSER}")
@@ -121,7 +122,7 @@ def main():
     print(f"PGHOST: {PGHOST}")
     print(f"PGPORT: {PGPORT}")
     print(f"Discord Webhook URL: {WEBHOOK_URL}")
-    
+
     while True:
         latest_post_id = get_latest_post_id()
         print(f"Latest post ID: {latest_post_id}")
