@@ -6,6 +6,11 @@ import os
 
 # ✅ Updated Discord webhook URL
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+PGDATABASE = os.getenv("PGDATABASE")
+PGUSER = os.getenv("PGUSER")
+PGPASSWORD = os.getenv("PGPASSWORD")
+PGHOST = os.getenv("PGHOST")   
+PGPORT = os.getenv("PGPORT")
 
 # Base thread URL
 THREAD_URL = 'https://forum.eclipse-rp.net/topic/28550-los-santos-county-sheriffs-department'
@@ -108,6 +113,15 @@ def send_to_discord(username, timestamp, summary, img_url, post_url):
         print(f"❌ Failed to send embed. Status code: {response.status_code}")
 
 def main():
+    print("Starting the LS County Sheriff's Department thread scraper...")
+    print("Environment variables:")
+    print(f"PGDATABASE: {PGDATABASE}")
+    print(f"PGUSER: {PGUSER}")
+    print(f"PGPASSWORD: {PGPASSWORD}")
+    print(f"PGHOST: {PGHOST}")
+    print(f"PGPORT: {PGPORT}")
+    print(f"Discord Webhook URL: {WEBHOOK_URL}")
+    
     while True:
         latest_post_id = get_latest_post_id()
         print(f"Latest post ID: {latest_post_id}")
