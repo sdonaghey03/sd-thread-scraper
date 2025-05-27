@@ -81,6 +81,7 @@ def send_to_discord(username, timestamp, summary, img_url, post_url):
     if img_url:
         embed["image"] = {"url": img_url}
     data = {"embeds": [embed]}
+    print(f"Sending embed to {WEBHOOK_URL}...")
     response = requests.post(WEBHOOK_URL, json=data)
     if response.status_code in [200, 204]:
         print("✅ Embed sent successfully.")
