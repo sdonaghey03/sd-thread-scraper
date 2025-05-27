@@ -26,22 +26,41 @@ def get_db_connection():
         host=os.getenv("PGHOST"),
         port=os.getenv("PGPORT")
     )
-
+    
 def get_latest_post_id():
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("CREATE TABLE IF NOT EXISTS post_tracker (id SERIAL PRIMARY KEY, latest_post_id TEXT);")
-    cur.execute("INSERT INTO post_tracker (latest_post_id) VALUES ('559109');")
+
+    # Ensure the table exists
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS post_tracker (
+            id SERIAL PRIMARY KEY,
+            latest_post_id TEXT
+        );
+    """)
+
     cur.execute("SELECT latest_post_id FROM post_tracker ORDER BY id DESC LIMIT 1;")
     result = cur.fetchone()
     cur.close()
     conn.close()
-    return result[0] if result else None
-
+    if result:
+        return result[0]
+    else:
+        return None
 
 def save_latest_post_id(post_id):
     conn = get_db_connection()
     cur = conn.cursor()
+
+    # Ensure the table exists
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS post_tracker (
+            id SERIAL PRIMARY KEY,
+            latest_post_id TEXT
+        );
+    """)
+
+    # Insert the new post ID
     cur.execute("INSERT INTO post_tracker (latest_post_id) VALUES (%s);", (post_id,))
     conn.commit()
     cur.close()
