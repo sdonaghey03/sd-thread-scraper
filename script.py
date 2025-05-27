@@ -4,7 +4,7 @@ import time
 import os
 
 # ✅ Updated Discord webhook URL
-WEBHOOK_URL = 'https://discord.com/api/webhooks/1376908389497700482/7uLe3TeFP35Mo00SBokwwV2vDBaAJwDsRDnsapomFxl19_4G-UXoXIQimBah1GITRRea'
+WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
 # Base thread URL
 THREAD_URL = 'https://forum.eclipse-rp.net/topic/28550-los-santos-county-sheriffs-department'
