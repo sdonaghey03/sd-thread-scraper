@@ -89,7 +89,7 @@ def scrape_thread():
             time_tag = post.find('time')
             timestamp = time_tag['datetime'] if time_tag and time_tag.has_attr('datetime') else None
 
-            content_div = post.find('div', class_='ipsComment_content')
+            content_div = post.find('div', class_='ipsContained')
             if content_div:
                 full_text = content_div.get_text(separator=' ', strip=True)
                 full_text = full_text.replace('ReportPosted', '').strip()
