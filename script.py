@@ -91,6 +91,8 @@ def send_to_discord(username, timestamp, summary, img_url, post_url):
 def main():
     while True:
         latest_post_id = get_latest_post_id()
+        print(f"Latest post ID: {latest_post_id}")
+        
         post_data = scrape_thread()
 
         new_replies = []
