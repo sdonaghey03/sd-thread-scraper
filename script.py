@@ -3,10 +3,10 @@ from bs4 import BeautifulSoup
 import time
 import os
 
-# Updated Discord webhook URL
-WEBHOOK_URL = 'https://discord.com/api/webhooks/1376570425588322307/OVy9MRF_4N0RxTKSN5aOAy52eNhxPPN5dUNDHln6pQTaXblRw-Cl9X1Jd78v4UP_bx2I'
+# ✅ Updated Discord webhook URL
+WEBHOOK_URL = 'https://discord.com/api/webhooks/1376908389497700482/7uLe3TeFP35Mo00SBokwwV2vDBaAJwDsRDnsapomFxl19_4G-UXoXIQimBah1GITRRea'
 
-# URL of the phpBB thread to monitor
+# Base thread URL
 THREAD_URL = 'https://forum.eclipse-rp.net/topic/28550-los-santos-county-sheriffs-department'
 
 # File to store the ID of the latest seen post
@@ -23,42 +23,60 @@ def save_latest_post_id(post_id):
         file.write(post_id)
 
 def scrape_thread():
-    response = requests.get(THREAD_URL)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    
-    posts = soup.find_all('article', id=lambda x: x and x.startswith('elComment_'))
-
     post_data = []
-    for post in posts:
-        post_id = post['id'].replace('elComment_', '')
+    page = 1
 
-        username_tag = post.find('a', class_='ipsType_break')
-        username = username_tag.get_text(strip=True) if username_tag else 'Unknown'
+    while True:
+        print(f"Scraping page {page}...")
+        response = requests.get(f"{THREAD_URL}/page/{page}")
+        print(f"Response status code: {response.status_code}")
+        soup = BeautifulSoup(response.content, 'html.parser')
+        print(f"Parsing HTML content for {page}...")
 
-        time_tag = post.find('time')
-        timestamp = time_tag['datetime'] if time_tag and time_tag.has_attr('datetime') else None
+        if response.url != f"{THREAD_URL}/page/{page}":
+            print(f"End of pages, stopping scrape.")
+            break
+        
+        posts = soup.find_all('article', id=lambda x: x and x.startswith('elComment_'))
+        if not posts:
+            break
 
-        content_div = post.find('div', class_='ipsContained')
-        if content_div:
-            full_text = content_div.get_text(separator=' ', strip=True)
-            full_text = full_text.replace('ReportPosted', '').strip()
-            summary = full_text[:200] + ('...' if len(full_text) > 200 else '')
+        for post in posts:
+            post_id = post['id'].replace('elComment_', '')
 
-            img_tag = content_div.find('img')
-            img_url = img_tag['src'] if img_tag else None
+            username_tag = post.find('a', class_='ipsType_break')
+            username = username_tag.get_text(strip=True) if username_tag else 'Unknown'
 
-            post_data.append((post_id, username, timestamp, summary, img_url))
-    return [post_data[4]]
+            time_tag = post.find('time')
+            timestamp = time_tag['datetime'] if time_tag and time_tag.has_attr('datetime') else None
 
-def send_to_discord(username, timestamp, summary, img_url):
+            content_div = post.find('div', class_='ipsComment_content')
+            if content_div:
+                full_text = content_div.get_text(separator=' ', strip=True)
+                full_text = full_text.replace('ReportPosted', '').strip()
+                summary = full_text[:200] + ('...' if len(full_text) > 200 else '')
+
+                img_tag = content_div.find('img')
+                img_url = img_tag['src'] if img_tag else None
+
+                post_url = f"{THREAD_URL}/?do=findComment&comment={post_id}"
+
+                post_data.append((post_id, username, timestamp, summary, img_url, post_url))
+        
+        page += 1
+
+    return list(reversed(post_data))  # Newest posts first
+
+def send_to_discord(username, timestamp, summary, img_url, post_url):
     embed = {
-        "title": "📢 New Reply in the ECRP Faction Thread",
+        "title": "📢 New Reply in LS County Sheriff's Thread",
         "author": {
             "name": username
         },
         "description": summary,
         "timestamp": timestamp,
-        "color": 3447003
+        "color": 3447003,
+        "url": post_url
     }
     if img_url:
         embed["image"] = {"url": img_url}
@@ -75,17 +93,18 @@ def main():
         post_data = scrape_thread()
 
         new_replies = []
-        for post_id, username, timestamp, summary, img_url in post_data:
+        for post_id, username, timestamp, summary, img_url, post_url in post_data:
             if post_id == latest_post_id:
                 break
-            new_replies.append((post_id, username, timestamp, summary, img_url))
+            new_replies.append((post_id, username, timestamp, summary, img_url, post_url))
 
         if new_replies:
-            for post_id, username, timestamp, summary, img_url in reversed(new_replies):
-                send_to_discord(username, timestamp, summary, img_url)
+            for post_id, username, timestamp, summary, img_url, post_url in reversed(new_replies):
+                send_to_discord(username, timestamp, summary, img_url, post_url)
                 save_latest_post_id(post_id)
+                time.sleep(5)  # Sleep to avoid hitting rate limits
 
-        time.sleep(300)
+        time.sleep(300)  # Wait 5 minutes
 
 if __name__ == "__main__":
     main()
