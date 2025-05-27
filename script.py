@@ -31,6 +31,7 @@ def get_latest_post_id():
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("CREATE TABLE IF NOT EXISTS post_tracker (id SERIAL PRIMARY KEY, latest_post_id TEXT);")
+    cur.execute("INSERT INTO post_tracker (latest_post_id) VALUES ('559109');")
     cur.execute("SELECT latest_post_id FROM post_tracker ORDER BY id DESC LIMIT 1;")
     result = cur.fetchone()
     cur.close()
